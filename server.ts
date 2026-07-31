@@ -9,14 +9,21 @@ import { GoogleGenAI } from "@google/genai";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      "User-Agent": "aistudio-build",
+// Helper function to get Gemini AI instance
+function getGeminiClient() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        "User-Agent": "aistudio-build",
+      },
     },
-  },
-});
+  });
+}
 
 const app = express();
 const PORT = 3000;
@@ -33,17 +40,19 @@ app.post("/api/gemini/generate-objectives", async (req, res) => {
     }
 
     console.log(`Generating AI objectives for program: "${programName}"...`);
+    const cleanName = programName.trim();
     
-    const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+    const ai = getGeminiClient();
     let response = null;
-    let lastError = null;
 
-    for (const modelName of modelsToTry) {
-      try {
-        console.log(`Trying model: ${modelName}`);
-        response = await ai.models.generateContent({
-          model: modelName,
-          contents: `Anda adalah pembantu pengurusan sekolah di Malaysia. Sila jana 2 hingga 3 objektif program yang ringkas, profesional, dan padat (dalam Bahasa Melayu) berdasarkan tajuk program berikut: "${programName}".
+    if (ai) {
+      const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+      for (const modelName of modelsToTry) {
+        try {
+          console.log(`Trying model: ${modelName}`);
+          response = await ai.models.generateContent({
+            model: modelName,
+            contents: `Anda adalah pembantu pengurusan sekolah di Malaysia. Sila jana 2 hingga 3 objektif program yang ringkas, profesional, dan padat (dalam Bahasa Melayu) berdasarkan tajuk program berikut: "${cleanName}".
 
 Garis Panduan Penting:
 1. Tulis dalam bentuk senarai bernombor (numbering) bermula dengan angka 1 dan seterusnya (cth: "1. ", "2. ", "3. "). Jangan gunakan simbol "- " atau bullet points lain.
@@ -54,15 +63,17 @@ Contoh Output:
 1. Meningkatkan kesedaran murid tentang kepentingan keselamatan jalan raya.
 2. Memupuk semangat kerjasama dan kepimpinan dalam kalangan peserta.
 3. Melahirkan pelajar yang berdisiplin dan bertanggungjawab.`,
-        });
-        if (response && response.text) {
-          console.log(`Successfully generated using ${modelName}`);
-          break;
+          });
+          if (response && response.text) {
+            console.log(`Successfully generated using ${modelName}`);
+            break;
+          }
+        } catch (err: any) {
+          console.warn(`Model ${modelName} failed:`, err.message || err);
         }
-      } catch (err: any) {
-        console.warn(`Model ${modelName} failed:`, err.message || err);
-        lastError = err;
       }
+    } else {
+      console.warn("GEMINI_API_KEY environment variable is missing in Vercel.");
     }
 
     let objectives = "";
@@ -70,9 +81,7 @@ Contoh Output:
       objectives = response.text.trim();
       console.log("Objectives generated successfully via Gemini API.");
     } else {
-      console.warn("All Gemini API models failed. Using high-quality local fallback generator...");
-      // Generates clean, tailored objectives as a graceful fallback so the application is completely robust
-      const cleanName = programName.trim();
+      console.warn("Using high-quality local fallback generator...");
       objectives = [
         `1. Meningkatkan pemahaman dan kesedaran murid tentang kepentingan aktiviti dalam "${cleanName}".`,
         `2. Memupuk semangat kerjasama, disiplin, dan penglibatan aktif semua peserta yang menyertai "${cleanName}".`,
@@ -83,7 +92,13 @@ Contoh Output:
     res.json({ objectives });
   } catch (error: any) {
     console.error("Gemini Generation Error:", error);
-    res.status(500).json({ error: "Gagal menjana objektif menggunakan AI.", details: error.message });
+    const fallbackName = (req.body?.programName || "Program").trim();
+    const fallbackObjectives = [
+      `1. Meningkatkan pemahaman dan kesedaran murid tentang kepentingan aktiviti dalam "${fallbackName}".`,
+      `2. Memupuk semangat kerjasama, disiplin, dan penglibatan aktif semua peserta yang menyertai "${fallbackName}".`,
+      `3. Melahirkan pelajar yang seimbang dari aspek intelek, rohani, emosi, dan jasmani melalui program ini.`
+    ].join("\n");
+    res.json({ objectives: fallbackObjectives });
   }
 });
 
