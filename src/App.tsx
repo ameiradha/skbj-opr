@@ -42,6 +42,18 @@ export default function App() {
   const [generatingAI, setGeneratingAI] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
   const [showKeyModal, setShowKeyModal] = useState(false);
+  const [titleClicks, setTitleClicks] = useState(0);
+
+  const handleTitleClick = () => {
+    setTitleClicks((prev) => {
+      const next = prev + 1;
+      if (next >= 5) {
+        setShowKeyModal(true);
+        return 0;
+      }
+      return next;
+    });
+  };
 
   const saveApiKey = (key: string) => {
     setApiKey(key);
@@ -547,7 +559,13 @@ export default function App() {
       {showPreview && <Preview />}
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
         <header className="bg-blue-600 p-8 text-white text-center">
-          <h1 className="text-2xl font-bold tracking-tight">SK Kampung Bahagia Jaya OPR Generator</h1>
+          <h1 
+            onClick={handleTitleClick} 
+            className="text-2xl font-bold tracking-tight cursor-pointer select-none active:scale-[0.99] transition-transform"
+            title="SK Kampung Bahagia Jaya OPR Generator"
+          >
+            SK Kampung Bahagia Jaya OPR Generator
+          </h1>
           <p className="text-blue-100 mt-2 opacity-90">Jana Laporan Satu Muka (One Page Report) dengan Mudah</p>
         </header>
 
@@ -609,35 +627,24 @@ export default function App() {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <label className="text-sm font-semibold text-slate-700">Objektif</label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowKeyModal(true)}
-                  className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition-all"
-                  title="Tetapan API Key Gemini (Vercel)"
-                >
-                  <Key className="w-3 h-3 text-amber-500" />
-                  <span>{apiKey ? "API Key Ada" : "Tetapan Vercel AI"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={generateAIObjectives}
-                  disabled={generatingAI}
-                  className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 disabled:text-slate-400 disabled:cursor-not-allowed transition-all bg-blue-50 hover:bg-blue-100 disabled:bg-slate-50 px-2.5 py-1 rounded-md cursor-pointer"
-                >
-                  {generatingAI ? (
-                    <>
-                      <span className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full inline-block"></span>
-                      Menjana...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Jana Guna AI
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={generateAIObjectives}
+                disabled={generatingAI}
+                className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 disabled:text-slate-400 disabled:cursor-not-allowed transition-all bg-blue-50 hover:bg-blue-100 disabled:bg-slate-50 px-2.5 py-1 rounded-md cursor-pointer"
+              >
+                {generatingAI ? (
+                  <>
+                    <span className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full inline-block"></span>
+                    Menjana...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Jana Guna AI
+                  </>
+                )}
+              </button>
             </div>
             <textarea
               name="objectives"

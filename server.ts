@@ -47,7 +47,7 @@ app.post(["/api/gemini/generate-objectives", "/gemini/generate-objectives"], asy
     let response = null;
 
     if (ai) {
-      const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+      const modelsToTry = ["gemini-3.6-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
       for (const modelName of modelsToTry) {
         try {
           console.log(`Trying model: ${modelName}`);
