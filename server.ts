@@ -10,13 +10,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Helper function to get Gemini AI instance
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+function getGeminiClient(overrideKey?: string) {
+  const apiKey = overrideKey || process.env.GEMINI_API_KEY;
+  if (!apiKey || !apiKey.trim()) {
     return null;
   }
   return new GoogleGenAI({
-    apiKey,
+    apiKey: apiKey.trim(),
     httpOptions: {
       headers: {
         "User-Agent": "aistudio-build",
@@ -32,9 +32,9 @@ app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 
 // API Route for Gemini AI Objective Generation
-app.post("/api/gemini/generate-objectives", async (req, res) => {
+app.post(["/api/gemini/generate-objectives", "/gemini/generate-objectives"], async (req, res) => {
   try {
-    const { programName } = req.body;
+    const { programName, customApiKey } = req.body || {};
     if (!programName || typeof programName !== "string" || !programName.trim()) {
       return res.status(400).json({ error: "Sila masukkan nama program terlebih dahulu." });
     }
@@ -42,11 +42,12 @@ app.post("/api/gemini/generate-objectives", async (req, res) => {
     console.log(`Generating AI objectives for program: "${programName}"...`);
     const cleanName = programName.trim();
     
-    const ai = getGeminiClient();
+    const clientKey = customApiKey || (req.headers["x-gemini-api-key"] as string);
+    const ai = getGeminiClient(clientKey);
     let response = null;
 
     if (ai) {
-      const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+      const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
       for (const modelName of modelsToTry) {
         try {
           console.log(`Trying model: ${modelName}`);

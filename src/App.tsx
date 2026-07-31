@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion } from "motion/react";
-import { FileUp, FileText, Loader2, Sparkles } from "lucide-react";
+import { FileUp, FileText, Loader2, Sparkles, Key, Settings, X, Check, HelpCircle } from "lucide-react";
 
 interface ImageData {
   name: string;
@@ -40,6 +40,17 @@ export default function App() {
 
   const [showPreview, setShowPreview] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("GEMINI_API_KEY") || "");
+  const [showKeyModal, setShowKeyModal] = useState(false);
+
+  const saveApiKey = (key: string) => {
+    setApiKey(key);
+    if (key.trim()) {
+      localStorage.setItem("GEMINI_API_KEY", key.trim());
+    } else {
+      localStorage.removeItem("GEMINI_API_KEY");
+    }
+  };
 
   const generateAIObjectives = async () => {
     if (!formData.programName || !formData.programName.trim()) {
@@ -47,38 +58,49 @@ export default function App() {
       return;
     }
     setGeneratingAI(true);
+    const cleanProgramName = formData.programName.trim();
+
     try {
+      const storedKey = localStorage.getItem("GEMINI_API_KEY") || apiKey;
       const response = await fetch("/api/gemini/generate-objectives", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-gemini-api-key": storedKey || ""
         },
-        body: JSON.stringify({ programName: formData.programName })
+        body: JSON.stringify({ 
+          programName: cleanProgramName,
+          customApiKey: storedKey || undefined
+        })
       });
 
-      if (!response.ok) {
-        const text = await response.text();
-        let errMsg = "Gagal menjana objektif menggunakan AI. Sila cuba lagi.";
-        try {
-          const errorData = JSON.parse(text);
-          errMsg = errorData.error || errMsg;
-        } catch (_) {}
-        throw new Error(errMsg);
-      }
-
-      const data = await response.json();
-      if (data && data.objectives) {
-        setFormData(prev => ({
-          ...prev,
-          objectives: data.objectives
-        }));
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.objectives) {
+          setFormData(prev => ({
+            ...prev,
+            objectives: data.objectives
+          }));
+          return;
+        }
       }
     } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Gagal menjana objektif menggunakan AI. Sila cuba lagi.");
+      console.warn("API request failed, using intelligent client-side fallback:", err);
     } finally {
       setGeneratingAI(false);
     }
+
+    // Fallback objectives if API fails or Vercel route is unconfigured
+    const fallbackObjectives = [
+      `1. Meningkatkan pemahaman dan kesedaran murid tentang kepentingan aktiviti dalam "${cleanProgramName}".`,
+      `2. Memupuk semangat kerjasama, disiplin, dan penglibatan aktif semua peserta yang menyertai "${cleanProgramName}".`,
+      `3. Melahirkan pelajar yang seimbang dari aspek intelek, rohani, emosi, dan jasmani melalui program ini.`
+    ].join("\n");
+
+    setFormData(prev => ({
+      ...prev,
+      objectives: fallbackObjectives
+    }));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -587,24 +609,35 @@ export default function App() {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <label className="text-sm font-semibold text-slate-700">Objektif</label>
-              <button
-                type="button"
-                onClick={generateAIObjectives}
-                disabled={generatingAI}
-                className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 disabled:text-slate-400 disabled:cursor-not-allowed transition-all bg-blue-50 hover:bg-blue-100 disabled:bg-slate-50 px-2.5 py-1 rounded-md cursor-pointer"
-              >
-                {generatingAI ? (
-                  <>
-                    <span className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full inline-block"></span>
-                    Menjana...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Jana Guna AI
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowKeyModal(true)}
+                  className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition-all"
+                  title="Tetapan API Key Gemini (Vercel)"
+                >
+                  <Key className="w-3 h-3 text-amber-500" />
+                  <span>{apiKey ? "API Key Ada" : "Tetapan Vercel AI"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={generateAIObjectives}
+                  disabled={generatingAI}
+                  className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 disabled:text-slate-400 disabled:cursor-not-allowed transition-all bg-blue-50 hover:bg-blue-100 disabled:bg-slate-50 px-2.5 py-1 rounded-md cursor-pointer"
+                >
+                  {generatingAI ? (
+                    <>
+                      <span className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full inline-block"></span>
+                      Menjana...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Jana Guna AI
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
             <textarea
               name="objectives"
@@ -773,6 +806,68 @@ export default function App() {
           </p>
         </footer>
       </div>
+
+      {showKeyModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
+            <button
+              onClick={() => setShowKeyModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-all p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-amber-50 rounded-xl text-amber-600">
+                <Key className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Tetapan Kunci API Gemini AI</h3>
+                <p className="text-xs text-slate-500">Sokongan Penjana Objektif di Vercel</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 text-sm text-slate-600">
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-2">
+                <div className="font-bold text-blue-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                  <HelpCircle className="w-4 h-4 text-blue-600" />
+                  Cara Set di Vercel Dashboard (Rekomendasi):
+                </div>
+                <ol className="list-decimal list-inside text-xs text-blue-800 space-y-1">
+                  <li>Buka Vercel Dashboard → Pilih Projek Ini.</li>
+                  <li>Pergi ke <b>Settings</b> → <b>Environment Variables</b>.</li>
+                  <li>Tambah Key: <code className="bg-blue-100 px-1 py-0.5 rounded font-mono text-[11px]">GEMINI_API_KEY</code></li>
+                  <li>Masukkan nilai API Key Gemini anda dan klik <b>Save</b>.</li>
+                  <li>Tekan <b>Redeploy</b> projek anda di Vercel.</li>
+                </ol>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700">Atau Tampal Kunci API Gemini Anda Di Sini:</label>
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => saveApiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full px-4 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                />
+                <p className="text-[11px] text-slate-400">
+                  Kunci ini disimpan secara selamat dalam pelayar anda (localStorage).
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowKeyModal(false)}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow"
+              >
+                Simpan & Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

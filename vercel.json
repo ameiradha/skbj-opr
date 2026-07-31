@@ -1,30 +1,19 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "server.ts",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 15
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "server.ts"
+      "source": "/api/gemini/generate-objectives",
+      "destination": "/api/gemini/generate-objectives"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "/dist/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/dist/$1"
+      "source": "/api/(.*)",
+      "destination": "/server.ts"
     }
   ]
 }
