@@ -559,6 +559,14 @@ export default function App() {
       {showPreview && <Preview />}
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
         <header className="bg-blue-600 p-8 text-white text-center">
+          <div className="flex justify-center mb-3">
+            <img 
+              src="https://lh3.googleusercontent.com/d/1f7DG6iymydW3DJPoDklB4bjBZB2hNDoc" 
+              alt="Logo SK Kampung Bahagia Jaya" 
+              className="h-20 w-auto object-contain drop-shadow-md"
+              referrerPolicy="no-referrer"
+            />
+          </div>
           <h1 
             onClick={handleTitleClick} 
             className="text-2xl font-bold tracking-tight cursor-pointer select-none active:scale-[0.99] transition-transform"
