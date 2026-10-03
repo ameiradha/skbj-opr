@@ -63,8 +63,7 @@ export default function App() {
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [titleClicks, setTitleClicks] = useState(0);
 
-  const offscreenReportRef = useRef<HTMLDivElement>(null);
-  const previewReportRef = useRef<HTMLDivElement>(null);
+  const exportReportRef = useRef<HTMLDivElement>(null);
 
   // Preload header banner as base64 data url for seamless html2canvas rendering
   useEffect(() => {
@@ -229,28 +228,25 @@ export default function App() {
     setImages(newImages);
   };
 
-  // Pure Client-side High-Resolution PDF Generator using html2canvas & jsPDF
+  // Pure Client-side High-Resolution PDF Generator using html2canvas & jsPDF with oklch sanitizer
   const generatePdfFile = async () => {
     setNotification(null);
     setLoading(true);
-    setProgress(15);
+    setProgress(20);
     setProgressStatus("Menyediakan templat laporan A4...");
 
     try {
-      // Determine which element to capture: visible modal or offscreen report
-      const targetElement = (showPreview && previewReportRef.current) 
-        ? previewReportRef.current 
-        : offscreenReportRef.current;
+      const targetElement = exportReportRef.current || document.getElementById("opr-export-document");
 
       if (!targetElement) {
         throw new Error("Elemen templat laporan tidak dijumpai.");
       }
 
-      setProgress(35);
+      setProgress(40);
       setProgressStatus("Merender grafik & gambar beresolusi tinggi...");
       
-      // Wait a short moment to ensure DOM/images layout settled
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Short delay to ensure DOM and layout settled
+      await new Promise(resolve => setTimeout(resolve, 200));
 
       const canvas = await html2canvas(targetElement, {
         scale: 2, // 2x gives crisp 300dpi printing quality on A4
@@ -258,7 +254,27 @@ export default function App() {
         allowTaint: true,
         backgroundColor: "#ffffff",
         logging: false,
+        width: 794,
+        height: 1123,
         windowWidth: 794,
+        windowHeight: 1123,
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+          // Sanitize cloned document to prevent any Tailwind v4 oklch color parsing errors
+          const clonedNodes = clonedDoc.querySelectorAll("*");
+          clonedNodes.forEach((node) => {
+            if (node instanceof HTMLElement) {
+              const inlineStyle = node.getAttribute("style") || "";
+              if (inlineStyle.includes("oklch")) {
+                node.style.color = "#0f172a";
+                node.style.borderColor = "#cbd5e1";
+              }
+            }
+          });
+        }
       });
 
       setProgress(75);
@@ -289,21 +305,22 @@ export default function App() {
       setProgressStatus("Selesai!");
       setNotification({
         type: "success",
-        message: `Laporan PDF "${cleanFileName}_One_Page_Report.pdf" berjaya dijana dan dimuat turun!`
+        message: `Laporan PDF "${cleanFileName}_One_Page_Report.pdf" berjaya dimuat turun!`
       });
 
       setTimeout(() => {
         setLoading(false);
         setProgress(0);
         setProgressStatus("");
-      }, 800);
+      }, 700);
     } catch (error: any) {
       console.error("Gagal menjana PDF:", error);
       const msg = error?.message || "Ralat semasa pemprosesan PDF.";
       setNotification({
-        type: "error",
-        message: `Gagal menjana PDF: ${msg}. Sila gunakan butang 'PRATONTON' untuk cetak secara terus.`
+        type: "warning",
+        message: `Penjanaan terus: ${msg}. Pratonton dibuka untuk anda cetak / simpan sebagai PDF.`
       });
+      setShowPreview(true);
       setLoading(false);
       setProgress(0);
       setProgressStatus("");
@@ -509,63 +526,105 @@ export default function App() {
     "WARDEN ASRAMA",
   ];
 
-  // Reusable Single-Page A4 OPR Report Content
-  const ReportDocument = ({ containerId, refProp }: { containerId?: string; refProp?: React.RefObject<HTMLDivElement | null> }) => (
+  // Reusable Single-Page A4 OPR Report Document Layout with pure standard HEX styles (NO oklch)
+  const renderDocumentContent = (containerId: string, refInstance?: React.RefObject<HTMLDivElement | null>) => (
     <div 
-      id={containerId || "opr-print-container"}
-      ref={refProp}
-      style={{ width: "794px", height: "1123px", minHeight: "1123px", maxHeight: "1123px" }}
-      className="p-8 bg-white text-slate-900 shadow-xl border border-slate-200 relative overflow-hidden shrink-0 flex flex-col justify-between font-sans box-border"
+      id={containerId}
+      ref={refInstance}
+      style={{ 
+        width: "794px", 
+        height: "1123px", 
+        minHeight: "1123px", 
+        maxHeight: "1123px", 
+        backgroundColor: "#ffffff",
+        color: "#0f172a",
+        padding: "32px",
+        boxSizing: "border-box",
+        border: "1px solid #e2e8f0",
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        fontFamily: "Inter, Arial, Helvetica, sans-serif"
+      }}
     >
-      {/* Subtle background graphic */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none flex items-center justify-center">
-        <div className="w-[120%] h-[120%] rotate-12 border-[40px] border-blue-600"></div>
+      {/* Subtle background graphic watermark */}
+      <div 
+        style={{ 
+          position: "absolute", 
+          inset: 0, 
+          opacity: 0.04, 
+          pointerEvents: "none", 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center" 
+        }}
+      >
+        <div style={{ width: "120%", height: "120%", transform: "rotate(12deg)", border: "40px solid #2563eb" }}></div>
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col justify-between">
+      <div style={{ position: "relative", zIndex: 10, flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         {/* Header / Banner */}
         <div>
-          <div className="text-center mb-4 pb-3 border-b-2 border-blue-600">
+          <div style={{ textAlign: "center", marginBottom: "16px", paddingBottom: "12px", borderBottom: "2px solid #2563eb" }}>
             {bannerDataUrl ? (
               <img 
                 src={bannerDataUrl} 
                 alt="Header Banner" 
-                className="w-full h-auto max-h-20 object-contain mx-auto"
+                style={{ width: "100%", height: "auto", maxHeight: "80px", objectFit: "contain", margin: "0 auto", display: "block" }}
                 crossOrigin="anonymous"
               />
             ) : (
-              <div className="text-center py-2">
-                <h2 className="text-xl font-bold text-blue-900 tracking-wider">SEKOLAH KEBANGSAAN KAMPUNG BAHAGIA JAYA</h2>
-                <p className="text-xs text-slate-600 font-semibold uppercase tracking-widest">LAPORAN SATU MUKA (ONE PAGE REPORT - OPR)</p>
+              <div style={{ textAlign: "center", padding: "8px 0" }}>
+                <h2 style={{ fontSize: "20px", fontWeight: "bold", color: "#1e3a8a", letterSpacing: "0.05em", margin: 0 }}>
+                  SEKOLAH KEBANGSAAN KAMPUNG BAHAGIA JAYA
+                </h2>
+                <p style={{ fontSize: "12px", color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginTop: "4px" }}>
+                  LAPORAN SATU MUKA (ONE PAGE REPORT - OPR)
+                </p>
               </div>
             )}
           </div>
 
           {/* Details Table / Grid */}
-          <div className="space-y-2 text-[12px] leading-snug">
-            <div className="grid grid-cols-[100px_1fr] gap-2 items-baseline">
-              <span className="font-bold text-slate-600 uppercase text-[11px]">Program:</span>
-              <span className="font-semibold text-slate-900">{formData.programName || "—"}</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "12px", lineHeight: "1.35" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px", alignItems: "baseline" }}>
+              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Program:</span>
+              <span style={{ fontWeight: 600, color: "#0f172a" }}>{formData.programName || "—"}</span>
             </div>
-            <div className="grid grid-cols-[100px_1fr] gap-2 items-baseline">
-              <span className="font-bold text-slate-600 uppercase text-[11px]">Anjuran:</span>
-              <span className="font-medium text-slate-800">{formData.organizer || "—"}</span>
+            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px", alignItems: "baseline" }}>
+              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Anjuran:</span>
+              <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.organizer || "—"}</span>
             </div>
-            <div className="grid grid-cols-[100px_1fr] gap-2 items-baseline">
-              <span className="font-bold text-slate-600 uppercase text-[11px]">Tarikh:</span>
-              <span className="font-medium text-slate-800">{formData.date || "—"}</span>
+            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px", alignItems: "baseline" }}>
+              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Tarikh:</span>
+              <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.date || "—"}</span>
             </div>
-            <div className="grid grid-cols-[100px_1fr] gap-2 items-baseline">
-              <span className="font-bold text-slate-600 uppercase text-[11px]">Tempat:</span>
-              <span className="font-medium text-slate-800">{formData.location || "—"}</span>
+            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px", alignItems: "baseline" }}>
+              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Tempat:</span>
+              <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.location || "—"}</span>
             </div>
-            <div className="grid grid-cols-[100px_1fr] gap-2 items-baseline">
-              <span className="font-bold text-slate-600 uppercase text-[11px]">Sasaran:</span>
-              <span className="font-medium text-slate-800">{formData.targetAudience || "—"}</span>
+            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px", alignItems: "baseline" }}>
+              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Sasaran:</span>
+              <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.targetAudience || "—"}</span>
             </div>
-            <div className="pt-2 border-t border-slate-200">
-              <div className="font-bold text-slate-700 uppercase text-[11px] mb-1">Objektif:</div>
-              <div className="whitespace-pre-wrap pl-3 border-l-4 border-blue-500 text-slate-800 text-[11.5px] bg-slate-50 p-2 rounded-r-md leading-relaxed min-h-[50px]">
+            <div style={{ paddingTop: "8px", borderTop: "1px solid #e2e8f0" }}>
+              <div style={{ fontWeight: "bold", color: "#334155", textTransform: "uppercase", fontSize: "11px", marginBottom: "4px" }}>Objektif:</div>
+              <div 
+                style={{ 
+                  whiteSpace: "pre-wrap", 
+                  paddingLeft: "12px", 
+                  borderLeft: "4px solid #3b82f6", 
+                  color: "#1e293b", 
+                  fontSize: "11.5px", 
+                  backgroundColor: "#f8fafc", 
+                  padding: "8px 12px", 
+                  borderRadius: "0 6px 6px 0", 
+                  lineHeight: "1.5", 
+                  minHeight: "50px" 
+                }}
+              >
                 {formData.objectives || "Tiada objektif dinyatakan."}
               </div>
             </div>
@@ -573,24 +632,61 @@ export default function App() {
         </div>
 
         {/* Images Grid (2 x 2) */}
-        <div className="my-3 grid grid-cols-2 gap-4">
+        <div style={{ margin: "12px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           {images.map((img, idx) => (
-            <div key={idx} className="flex flex-col items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
-              <div className="w-full h-32 bg-slate-200 rounded overflow-hidden border border-slate-300 flex items-center justify-center">
+            <div 
+              key={idx} 
+              style={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                alignItems: "center", 
+                backgroundColor: "#f8fafc", 
+                padding: "8px", 
+                borderRadius: "8px", 
+                border: "1px solid #e2e8f0" 
+              }}
+            >
+              <div 
+                style={{ 
+                  width: "100%", 
+                  height: "128px", 
+                  backgroundColor: "#e2e8f0", 
+                  borderRadius: "4px", 
+                  overflow: "hidden", 
+                  border: "1px solid #cbd5e1", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center" 
+                }}
+              >
                 {img.dataUrl ? (
                   <img 
                     src={img.dataUrl} 
                     alt={`Gambar ${idx + 1}`}
-                    className="w-full h-full object-cover"
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-slate-400 text-xs gap-1">
-                    <ImageIcon className="w-6 h-6 opacity-40" />
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: "12px", gap: "4px" }}>
+                    <ImageIcon style={{ width: "24px", height: "24px", opacity: 0.4 }} />
                     <span>Ruang Gambar {idx + 1}</span>
                   </div>
                 )}
               </div>
-              <p className="mt-1.5 text-[10px] font-bold text-slate-600 text-center uppercase tracking-wide truncate max-w-full">
+              <p 
+                style={{ 
+                  marginTop: "6px", 
+                  fontSize: "10px", 
+                  fontWeight: "bold", 
+                  color: "#475569", 
+                  textAlign: "center", 
+                  textTransform: "uppercase", 
+                  letterSpacing: "0.05em",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: "100%"
+                }}
+              >
                 {img.description || `Gambar ${idx + 1}`}
               </p>
             </div>
@@ -598,31 +694,55 @@ export default function App() {
         </div>
 
         {/* 3 Signature Blocks */}
-        <div className="grid grid-cols-3 gap-6 border-t border-slate-300 pt-3 mt-1">
-          <div className="flex flex-col justify-between">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-8">Disediakan oleh:</div>
-            <div className="border-t border-slate-900 pt-1">
-              <div className="text-[11px] font-bold text-slate-900 uppercase truncate">{formData.userName || "—"}</div>
-              <div className="text-[9px] text-slate-600 font-semibold uppercase truncate">{formData.position || "—"}</div>
-              <div className="text-[8px] text-slate-400 font-medium">SK KAMPUNG BAHAGIA JAYA, SIBU</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "24px", borderTop: "1px solid #cbd5e1", paddingTop: "12px", marginTop: "4px" }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "32px" }}>
+              Disediakan oleh:
+            </div>
+            <div style={{ borderTop: "1px solid #0f172a", paddingTop: "4px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {formData.userName || "—"}
+              </div>
+              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {formData.position || "—"}
+              </div>
+              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500 }}>
+                SK KAMPUNG BAHAGIA JAYA, SIBU
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col justify-between">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-8">Disemak oleh:</div>
-            <div className="border-t border-slate-900 pt-1">
-              <div className="text-[11px] font-bold text-slate-900 uppercase truncate">{formData.userName1 || "—"}</div>
-              <div className="text-[9px] text-slate-600 font-semibold uppercase truncate">{formData.position1 || "—"}</div>
-              <div className="text-[8px] text-slate-400 font-medium">SK KAMPUNG BAHAGIA JAYA, SIBU</div>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "32px" }}>
+              Disemak oleh:
+            </div>
+            <div style={{ borderTop: "1px solid #0f172a", paddingTop: "4px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {formData.userName1 || "—"}
+              </div>
+              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {formData.position1 || "—"}
+              </div>
+              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500 }}>
+                SK KAMPUNG BAHAGIA JAYA, SIBU
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col justify-between">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-8">Disahkan oleh:</div>
-            <div className="border-t border-slate-900 pt-1">
-              <div className="text-[11px] font-bold text-slate-900 uppercase truncate">{formData.userName2 || "—"}</div>
-              <div className="text-[9px] text-slate-600 font-semibold uppercase truncate">{formData.position2 || "—"}</div>
-              <div className="text-[8px] text-slate-400 font-medium">SK KAMPUNG BAHAGIA JAYA, SIBU</div>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "32px" }}>
+              Disahkan oleh:
+            </div>
+            <div style={{ borderTop: "1px solid #0f172a", paddingTop: "4px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {formData.userName2 || "—"}
+              </div>
+              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {formData.position2 || "—"}
+              </div>
+              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500 }}>
+                SK KAMPUNG BAHAGIA JAYA, SIBU
+              </div>
             </div>
           </div>
         </div>
@@ -632,19 +752,23 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4 font-sans text-slate-800">
-      {/* Hidden Offscreen Container for 100% Reliable PDF Generation */}
+      {/* Dedicated Clean Export Container with 100% HEX Styles for html2canvas */}
       <div 
+        id="opr-export-wrapper"
         style={{ 
           position: "fixed", 
-          left: "-9999px", 
-          top: "0", 
+          left: 0, 
+          top: 0, 
           width: "794px", 
-          zIndex: -50,
-          opacity: 0,
-          pointerEvents: "none"
+          height: "1123px",
+          zIndex: -999,
+          opacity: 1,
+          pointerEvents: "none",
+          overflow: "hidden",
+          backgroundColor: "#ffffff"
         }}
       >
-        <ReportDocument containerId="opr-render-hidden" refProp={offscreenReportRef} />
+        {renderDocumentContent("opr-export-document", exportReportRef)}
       </div>
 
       {/* Interactive Fullscreen Preview Modal */}
@@ -668,7 +792,7 @@ export default function App() {
 
             {/* Scrollable Document Canvas View */}
             <div className="flex-1 overflow-y-auto p-6 bg-slate-300/70 flex justify-center items-start">
-              <ReportDocument containerId="opr-print-container" refProp={previewReportRef} />
+              {renderDocumentContent("opr-print-container")}
             </div>
 
             {/* Modal Footer Controls */}
