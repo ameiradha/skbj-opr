@@ -228,7 +228,7 @@ export default function App() {
     setImages(newImages);
   };
 
-  // Pure Client-side High-Resolution PDF Generator using html2canvas & jsPDF with oklch sanitizer
+  // Pure Client-side High-Resolution Strict A4 PDF Generator
   const generatePdfFile = async () => {
     setNotification(null);
     setLoading(true);
@@ -282,7 +282,7 @@ export default function App() {
 
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
       
-      // Standard A4 dimensions in mm: 210 x 297
+      // Standard A4 dimensions in mm: 210 x 297 (Strict 1-page A4)
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -305,7 +305,7 @@ export default function App() {
       setProgressStatus("Selesai!");
       setNotification({
         type: "success",
-        message: `Laporan PDF "${cleanFileName}_One_Page_Report.pdf" berjaya dimuat turun!`
+        message: `Laporan PDF "${cleanFileName}_One_Page_Report.pdf" (Saiz A4) berjaya dimuat turun!`
       });
 
       setTimeout(() => {
@@ -387,6 +387,14 @@ export default function App() {
     "LAM KAH SOON",
     "MOHAMMAD RAMOS BIN MUSTAPHA",
     "JAMALLUDIN BIN JERAAEE@JURIT"
+  ];
+
+  // Specific 4 positions for Pengesah only
+  const validatorPositions = [
+    "GURU BESAR",
+    "PK PENTADBIRAN",
+    "PK HAL EHWAL MURID",
+    "PK KOKURIKULUM"
   ];
 
   const positions = [
@@ -526,7 +534,7 @@ export default function App() {
     "WARDEN ASRAMA",
   ];
 
-  // Reusable Single-Page A4 OPR Report Document Layout with pure standard HEX styles (NO oklch)
+  // Reusable Single-Page A4 OPR Report Document Layout with pure standard HEX styles and clean multiline text wrapping
   const renderDocumentContent = (containerId: string, refInstance?: React.RefObject<HTMLDivElement | null>) => (
     <div 
       id={containerId}
@@ -538,7 +546,7 @@ export default function App() {
         maxHeight: "1123px", 
         backgroundColor: "#ffffff",
         color: "#0f172a",
-        padding: "32px",
+        padding: "28px 32px",
         boxSizing: "border-box",
         border: "1px solid #e2e8f0",
         position: "relative",
@@ -567,20 +575,20 @@ export default function App() {
       <div style={{ position: "relative", zIndex: 10, flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         {/* Header / Banner */}
         <div>
-          <div style={{ textAlign: "center", marginBottom: "16px", paddingBottom: "12px", borderBottom: "2px solid #2563eb" }}>
+          <div style={{ textAlign: "center", marginBottom: "14px", paddingBottom: "10px", borderBottom: "2px solid #2563eb" }}>
             {bannerDataUrl ? (
               <img 
                 src={bannerDataUrl} 
                 alt="Header Banner" 
-                style={{ width: "100%", height: "auto", maxHeight: "80px", objectFit: "contain", margin: "0 auto", display: "block" }}
+                style={{ width: "100%", height: "auto", maxHeight: "75px", objectFit: "contain", margin: "0 auto", display: "block" }}
                 crossOrigin="anonymous"
               />
             ) : (
-              <div style={{ textAlign: "center", padding: "8px 0" }}>
-                <h2 style={{ fontSize: "20px", fontWeight: "bold", color: "#1e3a8a", letterSpacing: "0.05em", margin: 0 }}>
+              <div style={{ textAlign: "center", padding: "6px 0" }}>
+                <h2 style={{ fontSize: "19px", fontWeight: "bold", color: "#1e3a8a", letterSpacing: "0.05em", margin: 0 }}>
                   SEKOLAH KEBANGSAAN KAMPUNG BAHAGIA JAYA
                 </h2>
-                <p style={{ fontSize: "12px", color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginTop: "4px" }}>
+                <p style={{ fontSize: "11.5px", color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginTop: "3px" }}>
                   LAPORAN SATU MUKA (ONE PAGE REPORT - OPR)
                 </p>
               </div>
@@ -588,41 +596,41 @@ export default function App() {
           </div>
 
           {/* Details Table / Grid */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "12px", lineHeight: "1.35" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px", alignItems: "baseline" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "7px", fontSize: "12px", lineHeight: "1.3" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
               <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Program:</span>
               <span style={{ fontWeight: 600, color: "#0f172a" }}>{formData.programName || "—"}</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px", alignItems: "baseline" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
               <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Anjuran:</span>
               <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.organizer || "—"}</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px", alignItems: "baseline" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
               <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Tarikh:</span>
               <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.date || "—"}</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px", alignItems: "baseline" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
               <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Tempat:</span>
               <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.location || "—"}</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px", alignItems: "baseline" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
               <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Sasaran:</span>
               <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.targetAudience || "—"}</span>
             </div>
-            <div style={{ paddingTop: "8px", borderTop: "1px solid #e2e8f0" }}>
+            <div style={{ paddingTop: "6px", borderTop: "1px solid #e2e8f0" }}>
               <div style={{ fontWeight: "bold", color: "#334155", textTransform: "uppercase", fontSize: "11px", marginBottom: "4px" }}>Objektif:</div>
               <div 
                 style={{ 
                   whiteSpace: "pre-wrap", 
-                  paddingLeft: "12px", 
+                  paddingLeft: "10px", 
                   borderLeft: "4px solid #3b82f6", 
                   color: "#1e293b", 
-                  fontSize: "11.5px", 
+                  fontSize: "11px", 
                   backgroundColor: "#f8fafc", 
-                  padding: "8px 12px", 
+                  padding: "7px 10px", 
                   borderRadius: "0 6px 6px 0", 
-                  lineHeight: "1.5", 
-                  minHeight: "50px" 
+                  lineHeight: "1.45", 
+                  minHeight: "45px" 
                 }}
               >
                 {formData.objectives || "Tiada objektif dinyatakan."}
@@ -632,7 +640,7 @@ export default function App() {
         </div>
 
         {/* Images Grid (2 x 2) */}
-        <div style={{ margin: "12px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        <div style={{ margin: "10px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
           {images.map((img, idx) => (
             <div 
               key={idx} 
@@ -641,15 +649,15 @@ export default function App() {
                 flexDirection: "column", 
                 alignItems: "center", 
                 backgroundColor: "#f8fafc", 
-                padding: "8px", 
-                borderRadius: "8px", 
+                padding: "6px", 
+                borderRadius: "6px", 
                 border: "1px solid #e2e8f0" 
               }}
             >
               <div 
                 style={{ 
                   width: "100%", 
-                  height: "128px", 
+                  height: "120px", 
                   backgroundColor: "#e2e8f0", 
                   borderRadius: "4px", 
                   overflow: "hidden", 
@@ -666,25 +674,25 @@ export default function App() {
                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   />
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: "12px", gap: "4px" }}>
-                    <ImageIcon style={{ width: "24px", height: "24px", opacity: 0.4 }} />
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: "11px", gap: "3px" }}>
+                    <ImageIcon style={{ width: "22px", height: "22px", opacity: 0.4 }} />
                     <span>Ruang Gambar {idx + 1}</span>
                   </div>
                 )}
               </div>
               <p 
                 style={{ 
-                  marginTop: "6px", 
-                  fontSize: "10px", 
+                  marginTop: "5px", 
+                  fontSize: "9.5px", 
                   fontWeight: "bold", 
                   color: "#475569", 
                   textAlign: "center", 
                   textTransform: "uppercase", 
-                  letterSpacing: "0.05em",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  maxWidth: "100%"
+                  letterSpacing: "0.03em",
+                  lineHeight: "1.25",
+                  wordBreak: "break-word",
+                  maxHeight: "26px",
+                  overflow: "hidden"
                 }}
               >
                 {img.description || `Gambar ${idx + 1}`}
@@ -693,54 +701,57 @@ export default function App() {
           ))}
         </div>
 
-        {/* 3 Signature Blocks */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "24px", borderTop: "1px solid #cbd5e1", paddingTop: "12px", marginTop: "4px" }}>
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "32px" }}>
+        {/* 3 Signature Blocks with Complete Unclipped Full Names and Clean Wrapping */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "18px", borderTop: "1px solid #cbd5e1", paddingTop: "12px", marginTop: "2px" }}>
+          {/* Penyedia */}
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "130px" }}>
+            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>
               Disediakan oleh:
             </div>
-            <div style={{ borderTop: "1px solid #0f172a", paddingTop: "4px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "5px", marginTop: "auto" }}>
+              <div style={{ fontSize: "10.5px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word" }}>
                 {formData.userName || "—"}
               </div>
-              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", lineHeight: "1.25", marginTop: "2px", wordBreak: "break-word" }}>
                 {formData.position || "—"}
               </div>
-              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500 }}>
+              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500, marginTop: "2px" }}>
                 SK KAMPUNG BAHAGIA JAYA, SIBU
               </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "32px" }}>
+          {/* Penyemak */}
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "130px" }}>
+            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>
               Disemak oleh:
             </div>
-            <div style={{ borderTop: "1px solid #0f172a", paddingTop: "4px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "5px", marginTop: "auto" }}>
+              <div style={{ fontSize: "10.5px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word" }}>
                 {formData.userName1 || "—"}
               </div>
-              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", lineHeight: "1.25", marginTop: "2px", wordBreak: "break-word" }}>
                 {formData.position1 || "—"}
               </div>
-              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500 }}>
+              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500, marginTop: "2px" }}>
                 SK KAMPUNG BAHAGIA JAYA, SIBU
               </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "32px" }}>
+          {/* Pengesah */}
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "130px" }}>
+            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>
               Disahkan oleh:
             </div>
-            <div style={{ borderTop: "1px solid #0f172a", paddingTop: "4px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "5px", marginTop: "auto" }}>
+              <div style={{ fontSize: "10.5px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word" }}>
                 {formData.userName2 || "—"}
               </div>
-              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", lineHeight: "1.25", marginTop: "2px", wordBreak: "break-word" }}>
                 {formData.position2 || "—"}
               </div>
-              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500 }}>
+              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500, marginTop: "2px" }}>
                 SK KAMPUNG BAHAGIA JAYA, SIBU
               </div>
             </div>
@@ -752,7 +763,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4 font-sans text-slate-800">
-      {/* Dedicated Clean Export Container with 100% HEX Styles for html2canvas */}
+      {/* Dedicated Clean Export Container with 100% Strict A4 (794px x 1123px) Dimensions */}
       <div 
         id="opr-export-wrapper"
         style={{ 
@@ -1026,6 +1037,7 @@ export default function App() {
 
           {/* Teacher Signatures */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Penyedia */}
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 border-l-4 border-blue-500 pl-2">Penyedia</h4>
               <select
@@ -1045,13 +1057,14 @@ export default function App() {
                 className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium"
                 onChange={handleChange}
               >
-                <option value="">Pilih Jawatan</option>
+                <option value="">Pilih Jawatan Guru</option>
                 {positions.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>
             </div>
 
+            {/* Penyemak */}
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 border-l-4 border-blue-500 pl-2">Penyemak</h4>
               <select
@@ -1071,13 +1084,14 @@ export default function App() {
                 className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium"
                 onChange={handleChange}
               >
-                <option value="">Pilih Jawatan</option>
+                <option value="">Pilih Jawatan Guru</option>
                 {positions.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>
             </div>
 
+            {/* Pengesah (Restricted to 4 Administrator Positions only) */}
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 border-l-4 border-blue-500 pl-2">Pengesah</h4>
               <select
@@ -1097,8 +1111,8 @@ export default function App() {
                 className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium"
                 onChange={handleChange}
               >
-                <option value="">Pilih Jawatan</option>
-                {positions.map((p) => (
+                <option value="">Pilih Jawatan Pentadbir</option>
+                {validatorPositions.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>
@@ -1128,7 +1142,7 @@ export default function App() {
               ) : (
                 <>
                   <Download className="w-5 h-5" />
-                  <span>JANA LAPORAN PDF</span>
+                  <span>JANA LAPORAN PDF (A4)</span>
                 </>
               )}
             </button>
