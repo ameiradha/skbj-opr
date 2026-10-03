@@ -13,7 +13,8 @@ import {
   Eye,
   CheckCircle2,
   HelpCircle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Trash2
 } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -179,6 +180,7 @@ export default function App() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // 6:5 Aspect Ratio Full-Fill: Fits the box completely edge-to-edge without any surrounding blank space or distortion
   const handleImageChange = (index: number, file: File | null) => {
     const newImages = [...images];
     newImages[index].file = file;
@@ -187,27 +189,51 @@ export default function App() {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        // Compress image before saving dataUrl
         const img = new Image();
         img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width || 800;
-          let height = img.height || 600;
-          const maxWidth = 900;
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            newImages[index].dataUrl = canvas.toDataURL("image/jpeg", 0.75);
-          } else {
+          try {
+            // Strict 6:5 proportion (720 x 600)
+            const targetWidth = 720;
+            const targetHeight = 600;
+            const targetAspect = 6 / 5; // 1.2
+
+            const imgWidth = img.naturalWidth || img.width || 720;
+            const imgHeight = img.naturalHeight || img.height || 600;
+            const imgAspect = imgWidth / imgHeight;
+
+            let sx = 0;
+            let sy = 0;
+            let sWidth = imgWidth;
+            let sHeight = imgHeight;
+
+            if (imgAspect > targetAspect) {
+              // Image is wider than 6:5 -> center crop left & right
+              sWidth = imgHeight * targetAspect;
+              sx = (imgWidth - sWidth) / 2;
+            } else {
+              // Image is taller than 6:5 -> center crop top & bottom
+              sHeight = imgWidth / targetAspect;
+              sy = (imgHeight - sHeight) / 2;
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = "high";
+              // Draw full frame edge-to-edge without empty margins
+              ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
+              newImages[index].dataUrl = canvas.toDataURL("image/jpeg", 0.94);
+            } else {
+              newImages[index].dataUrl = result;
+            }
+            setImages([...newImages]);
+          } catch {
             newImages[index].dataUrl = result;
+            setImages([...newImages]);
           }
-          setImages([...newImages]);
         };
         img.onerror = () => {
           newImages[index].dataUrl = result;
@@ -222,13 +248,19 @@ export default function App() {
     }
   };
 
+  const handleRemoveImage = (index: number) => {
+    const newImages = [...images];
+    newImages[index] = { file: null, dataUrl: "", description: "" };
+    setImages(newImages);
+  };
+
   const handleDescChange = (index: number, description: string) => {
     const newImages = [...images];
     newImages[index].description = description;
     setImages(newImages);
   };
 
-  // Pure Client-side High-Resolution Strict A4 PDF Generator
+  // Pure Client-side High-Resolution Strict 1-Page A4 PDF Generator
   const generatePdfFile = async () => {
     setNotification(null);
     setLoading(true);
@@ -366,35 +398,50 @@ export default function App() {
     "NOOR SHAHIDA BINTI SHAFIE",
     "NOORAZLINA BINTI BOLHASSAN",
     "NORMAH BINTI RAWI",
-    "NURATIQAH BINTI MOHD SAID",
-    "NURUL NABILAH BINTI ABDUL HALIM",
-    "RAHIMAH BINTI IBRAHIM",
-    "RAMALAH BINTI YUSUF",
-    "RITA WONG SIAO ING",
-    "ROSMAH BINTI JOHREE",
-    "ROSMAWATI BINTI CHENG",
-    "THOMAS CHIEW SENG KAI",
-    "WAHYUNI BINTI ESAEH@ISHA",
-    "WAN MOHD LUKMANUL HAKIM BIN WAN MAZLI",
-    "CHRISTINA TELESAI ANAK JOSEPH MAUH",
-    "TING YIENG NI",
-    "OLYVIA ANAK KUNSAN",
-    "SANDRA TING TAI LING",
+    "NUR DIYANA BINTI ABU HASSAN",
+    "NURHAZIMAH BINTI HASHIM",
+    "PAZILAH BINTI OTHMAN",
+    "RADEN RINA SAFINATUNAJAH BINTI RADEN KASAH",
+    "RODNEY LING CHEE CHIONG",
+    "ROSLINA BINTI SALLEH",
+    "SHARIDA BINTI SAID",
+    "SHARIFAH SYAHIDAH BINTI WAN MOHAMAD",
+    "SITI AZURA BINTI ZAINUDIN",
+    "SITI MAHFUZAH BINTI ABU SEMAN",
+    "SITI NUR HIDAYAH BINTI MOHAMMED ZAINI",
+    "SITI NUR SHAHIRA BINTI ISMAIL",
+    "SYED SALLEH BIN WAN MUSTAPHA",
+    "TEO POH YNG",
+    "VALERIE A/P MICHAEL",
+    "WONG LEE NGUOK",
+    "ZAINAB BINTI MARZUKI",
+    "ZALIKHA BINTI ABU BAKAR",
+    "ZURAIDA BINTI JAAFAR",
+    "AWANGKU MOHD HAKIM SHAH BIN AWANG IBRAHIM",
+    "HII KING ING",
+    "NUR ELIYA BINTI ROSLAN",
+    "DAYANG NORLIZAYATI BINTI AWANG ZAINI",
+    "MOHD SYAKIR BIN SULONG",
+    "NORSIAH BINTI HOSEN",
+    "SEPAWI BIN SUHAILI",
+    "KHAIRUN NISA' BINTI MAKSOM",
+    "AZILAWATI BINTI YUSOFF",
   ];
 
+  // Specific 4 School Administrator Names
   const validatorNames = [
     "HAMDI BIN NAJDI",
     "LAM KAH SOON",
     "MOHAMMAD RAMOS BIN MUSTAPHA",
-    "JAMALLUDIN BIN JERAAEE@JURIT"
+    "JAMALLUDIN BIN JERAAEE@JURIT",
   ];
 
-  // Specific 4 positions for Pengesah only
+  // Specific 4 School Administrator Positions ONLY
   const validatorPositions = [
     "GURU BESAR",
     "PK PENTADBIRAN",
     "PK HAL EHWAL MURID",
-    "PK KOKURIKULUM"
+    "PK KOKURIKULUM",
   ];
 
   const positions = [
@@ -402,69 +449,114 @@ export default function App() {
     "PK PENTADBIRAN",
     "PK HAL EHWAL MURID",
     "PK KOKURIKULUM",
-    "GURU AKADEMIK BIASA",
-    "ADMIN APDM",
-    "AJK 1 PBPPP",
-    "AJK 2 PBPPP",
-    "AJK 3 PBPPP",
-    "AJK JADUAL WAKTU DAN TEACH-IN",
-    "BENDAHARI JK ASRAMA",
-    "BENDAHARI KELAB STAF",
-    "BENDAHARI KOKURIKULUM",
+    "AJK APDM",
+    "AJK ASRAMA",
+    "AJK BANTUAN SEKOLAH",
+    "AJK BESTARI / ICT",
+    "AJK BENCANA",
+    "AJK BIMBINGAN DAN KAUNSELING",
+    "AJK BILIK KHAS",
+    "AJK DISIPLIN DAN PENGAWAS",
+    "AJK DOKUMENTASI DAN MAKLUMAT",
+    "AJK E-OPERASI",
+    "AJK EMIS",
+    "AJK GURU PENYAYANG",
+    "AJK HRMIS",
+    "AJK INDUK HEM",
+    "AJK INDUK KOKURIKULUM",
+    "AJK INDUK KURIKULUM",
+    "AJK INDUK PENGURUSAN DAN PENTADBIRAN",
+    "AJK JADUAL WAKTU / TEACH-IN",
+    "AJK KEBERSIHAN",
+    "AJK KECERIAAN",
+    "AJK KESELAMATAN",
+    "AJK KESIHATAN",
+    "AJK KEWANGAN DAN AKAUN SEKOLAH",
+    "AJK LAWATAN",
+    "AJK MAJLIS SEKOLAH",
+    "AJK MESYUARAT KEWANGAN",
+    "AJK MESYUARAT PENGURUSAN STAF",
+    "AJK PBD",
+    "AJK PENDIDIKAN PENCEGAHAN DADAH (PPDa)",
+    "AJK PENERBITAN DAN MAJALAH SEKOLAH",
+    "AJK PENGURUSAN ASET ALIH KERAJAAN (JKPAK)",
+    "AJK PERANCANGAN STRATEGIK",
+    "AJK PERPADUAN",
+    "AJK PERSIJILAN DAN PENGHARGAAN",
+    "AJK PERTANDINGAN KOKURIKULUM",
+    "AJK PIBG",
+    "AJK PINTAS/OPPM",
+    "AJK PROGRAM KELAB STAF",
+    "AJK PROGRAM TRANSISI TAHUN 1",
+    "AJK PUSAT SUMBER SEKOLAH (PSS)",
+    "AJK RMT DAN KANTIN",
+    "AJK RUKUN TETANGGA SEKOLAH",
+    "AJK SARANA IBU BAPA",
+    "AJK SKPM",
+    "AJK SISTEM FAIL SEKOLAH",
+    "AJK SPLKPM",
+    "AJK SPBT",
+    "AJK SUKAN TAHUNAN SEKOLAH",
+    "AJK TS25",
     "BENDAHARI PIBG",
-    "BERTANGGUNGJAWAB MELAPOR KEROSAKAN DALAM BANGUNAN, LUAR BANGUNAN DAN PERALATAN SEKOLAH",
-    "GURU 3K",
-    "GURU BIMBINGAN & KAUNSELING",
-    "GURU BIASISWA / KWAMP / BANTUAN",
-    "GURU DATA",
-    "GURU KEDAP",
-    "GURU KELAS TAHUN 1",
-    "GURU KELAS TAHUN 2",
-    "GURU KELAS TAHUN 3",
-    "GURU KELAS TAHUN 4",
-    "GURU KELAS TAHUN 5",
-    "GURU KELAS TAHUN 6",
-    "GURU PAJSK",
-    "GURU PEMULIHAN KHAS",
-    "GURU PENASIHAT KELAB BAHASA MELAYU",
-    "GURU PENASIHAT KELAB BOLA BALING",
-    "GURU PENASIHAT KELAB BOLA TAKRAW",
-    "GURU PENASIHAT KELAB KEBUDAYAAN",
-    "GURU PENASIHAT KELAB PENCEGAH JENAYAH",
-    "GURU PENASIHAT KEBUDAYAAN",
-    "GURU PENASIHAT PPDA",
-    "GURU PENASIHAT PROGRAM PEMBANGUNAN OLAHRAGA / MERENTAS DESA",
-    "GURU PENASIHAT TKRS",
-    "GURU RUMAH SUKAN (HIJAU)",
-    "GURU RUMAH SUKAN (MERAH)",
-    "GURU RUMAH SUKAN (KUNING)",
-    "GURU RUMAH SUKAN (BIRU)",
-    "GURU SEGAK",
+    "GURU AKADEMIK",
+    "GURU ASRAMA",
+    "GURU BIMBINGAN DAN KAUNSELING",
+    "GURU DATA (MAKLUMAT)",
+    "GURU DISIPLIN",
+    "GURU KELAS",
+    "GURU MEDIA DAN PERPUSTAKAAN",
+    "GURU PENOLONG",
+    "GURU PENYELARAS ALIRAN TAHUN 1",
+    "GURU PENYELARAS ALIRAN TAHUN 2",
+    "GURU PENYELARAS ALIRAN TAHUN 3",
+    "GURU PENYELARAS ALIRAN TAHUN 4",
+    "GURU PENYELARAS ALIRAN TAHUN 5",
+    "GURU PENYELARAS ALIRAN TAHUN 6",
+    "GURU PRASEKOLAH",
+    "GURU RMT",
     "GURU SPBT",
-    "GURU SUKAN",
-    "JURULATIH RUMAH SUKAN (HIJAU)",
-    "JURULATIH RUMAH SUKAN (MERAH)",
-    "JURULATIH RUMAH SUKAN (KUNING)",
-    "JURULATIH RUMAH SUKAN (BIRU)",
-    "KEMASUKAN DAN PERPINDAHAN MURID",
-    "KETUA GURU DISIPLIN & PENGAWAS",
-    "KETUA PANITIA BAHASA IBAN",
-    "KETUA PANITIA BAHASA INGGERIS",
+    "GURU SUKAN DAN PERMAINAN",
+    "JURUAUDIT DALAMAN",
+    "KETUA GURU ASRAMA",
+    "KETUA GURU DISIPLIN",
     "KETUA PANITIA BAHASA MELAYU",
+    "KETUA PANITIA BAHASA INGGERIS",
     "KETUA PANITIA MATEMATIK",
-    "KETUA PANITIA PENDIDIKAN MORAL",
-    "KETUA PANITIA PENDIDIKAN MUZIK",
-    "KETUA PANITIA PENDIDIKAN SENI VISUAL",
-    "KETUA PANITIA PJK",
-    "KETUA PANITIA RBT",
     "KETUA PANITIA SAINS",
+    "KETUA PANITIA PENDIDIKAN ISLAM",
+    "KETUA PANITIA BAHASA ARAB",
+    "KETUA PANITIA PENDIDIKAN MORAL",
+    "KETUA PANITIA PENDIDIKAN JASMANI DAN KESIHATAN",
+    "KETUA PANITIA PENDIDIKAN SENI VISUAL",
+    "KETUA PANITIA PENDIDIKAN MUZIK",
+    "KETUA PANITIA REKA BENTUK DAN TEKNOLOGI",
     "KETUA PANITIA SEJARAH",
-    "KETUA RUMAH SUKAN (HIJAU)",
-    "KETUA RUMAH SUKAN (MERAH)",
-    "KETUA RUMAH SUKAN (KUNING)",
-    "KETUA RUMAH SUKAN (BIRU)",
-    "MENCATAT KELUAR MASUK SURAT",
-    "MENCETAK UJIAN, LATIHAN DAN PDP GURU",
+    "KETUA PENASIHAT BULAN SABIT MERAH MALAYSIA (BSMM)",
+    "KETUA PENASIHAT KADET REMAJA SEKOLAH (TKRS)",
+    "KETUA PENASIHAT KELAB BOLA BALING",
+    "KETUA PENASIHAT KELAB BOLA JARING",
+    "KETUA PENASIHAT KELAB BOLA SEPAK",
+    "KETUA PENASIHAT KELAB BOLA TAMPAR",
+    "KETUA PENASIHAT KELAB CATUR",
+    "KETUA PENASIHAT KELAB DOKTOR MUDA",
+    "KETUA PENASIHAT KELAB KESELAMATAN JALAN RAYA (PKJR)",
+    "KETUA PENASIHAT KELAB KEBUDAYAAN",
+    "KETUA PENASIHAT KELAB KITAR SEMULA / ALAM SEKITAR",
+    "KETUA PENASIHAT KELAB KOMPUTER / STEM",
+    "KETUA PENASIHAT KELAB PENCEGAHAN JENAYAH",
+    "KETUA PENASIHAT KELAB PENDIDIKAN ISLAM / BAHASA ARAB",
+    "KETUA PENASIHAT KELAB SEPAK TAKRAW",
+    "KETUA PENASIHAT PERSATUAN BAHASA MELAYU",
+    "KETUA PENASIHAT PERSATUAN BAHASA INGGERIS",
+    "KETUA PENASIHAT PERSATUAN PANDU PUTERI TUNAS",
+    "KETUA PENASIHAT PERGERAKAN PUTERI ISLAM MALAYSIA (PPIM)",
+    "KETUA PENASIHAT PENGAKAP KANAK-KANAK",
+    "KETUA RUMAH SUKAN BIRU",
+    "KETUA RUMAH SUKAN HIJAU",
+    "KETUA RUMAH SUKAN KUNING",
+    "KETUA RUMAH SUKAN MERAH",
+    "KETUA WARDEN ASRAMA",
     "PEGAWAI ASET",
     "PEGAWAI PELUPUSAN ASET",
     "PEMBANTU GURU SPBT",
@@ -534,7 +626,7 @@ export default function App() {
     "WARDEN ASRAMA",
   ];
 
-  // Reusable Single-Page A4 OPR Report Document Layout with pure standard HEX styles and clean multiline text wrapping
+  // Reusable Single-Page A4 OPR Report Document Layout - All Fonts Size 12, Taller Natural Header Logo, 6:5 Proportional Images, No Caption Ellipsis
   const renderDocumentContent = (containerId: string, refInstance?: React.RefObject<HTMLDivElement | null>) => (
     <div 
       id={containerId}
@@ -546,7 +638,7 @@ export default function App() {
         maxHeight: "1123px", 
         backgroundColor: "#ffffff",
         color: "#0f172a",
-        padding: "28px 32px",
+        padding: "20px 30px",
         boxSizing: "border-box",
         border: "1px solid #e2e8f0",
         position: "relative",
@@ -573,64 +665,72 @@ export default function App() {
       </div>
 
       <div style={{ position: "relative", zIndex: 10, flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-        {/* Header / Banner */}
+        {/* Header / Banner - Taller & Natural Proportions (Not Squished/Leper) */}
         <div>
-          <div style={{ textAlign: "center", marginBottom: "14px", paddingBottom: "10px", borderBottom: "2px solid #2563eb" }}>
+          <div style={{ textAlign: "center", marginBottom: "10px", paddingBottom: "6px", borderBottom: "2px solid #2563eb" }}>
             {bannerDataUrl ? (
               <img 
                 src={bannerDataUrl} 
                 alt="Header Banner" 
-                style={{ width: "100%", height: "auto", maxHeight: "75px", objectFit: "contain", margin: "0 auto", display: "block" }}
+                style={{ 
+                  width: "auto", 
+                  maxWidth: "100%", 
+                  height: "auto", 
+                  maxHeight: "95px", 
+                  objectFit: "contain", 
+                  margin: "0 auto", 
+                  display: "block" 
+                }}
                 crossOrigin="anonymous"
               />
             ) : (
-              <div style={{ textAlign: "center", padding: "6px 0" }}>
-                <h2 style={{ fontSize: "19px", fontWeight: "bold", color: "#1e3a8a", letterSpacing: "0.05em", margin: 0 }}>
+              <div style={{ textAlign: "center", padding: "4px 0" }}>
+                <h2 style={{ fontSize: "20px", fontWeight: "bold", color: "#1e3a8a", letterSpacing: "0.05em", margin: 0 }}>
                   SEKOLAH KEBANGSAAN KAMPUNG BAHAGIA JAYA
                 </h2>
-                <p style={{ fontSize: "11.5px", color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginTop: "3px" }}>
+                <p style={{ fontSize: "12px", color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginTop: "3px" }}>
                   LAPORAN SATU MUKA (ONE PAGE REPORT - OPR)
                 </p>
               </div>
             )}
           </div>
 
-          {/* Details Table / Grid */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "7px", fontSize: "12px", lineHeight: "1.3" }}>
+          {/* Details Table / Grid - All Fonts Exact Size 12 */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "12px", lineHeight: "1.3" }}>
             <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
-              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Program:</span>
-              <span style={{ fontWeight: 600, color: "#0f172a" }}>{formData.programName || "—"}</span>
+              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "12px" }}>Program:</span>
+              <span style={{ fontWeight: 600, color: "#0f172a", fontSize: "12px" }}>{formData.programName || "—"}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
-              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Anjuran:</span>
-              <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.organizer || "—"}</span>
+              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "12px" }}>Anjuran:</span>
+              <span style={{ fontWeight: 500, color: "#1e293b", fontSize: "12px" }}>{formData.organizer || "—"}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
-              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Tarikh:</span>
-              <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.date || "—"}</span>
+              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "12px" }}>Tarikh:</span>
+              <span style={{ fontWeight: 500, color: "#1e293b", fontSize: "12px" }}>{formData.date || "—"}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
-              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Tempat:</span>
-              <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.location || "—"}</span>
+              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "12px" }}>Tempat:</span>
+              <span style={{ fontWeight: 500, color: "#1e293b", fontSize: "12px" }}>{formData.location || "—"}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
-              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "11px" }}>Sasaran:</span>
-              <span style={{ fontWeight: 500, color: "#1e293b" }}>{formData.targetAudience || "—"}</span>
+              <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "12px" }}>Sasaran:</span>
+              <span style={{ fontWeight: 500, color: "#1e293b", fontSize: "12px" }}>{formData.targetAudience || "—"}</span>
             </div>
-            <div style={{ paddingTop: "6px", borderTop: "1px solid #e2e8f0" }}>
-              <div style={{ fontWeight: "bold", color: "#334155", textTransform: "uppercase", fontSize: "11px", marginBottom: "4px" }}>Objektif:</div>
+            <div style={{ paddingTop: "5px", borderTop: "1px solid #e2e8f0" }}>
+              <div style={{ fontWeight: "bold", color: "#334155", textTransform: "uppercase", fontSize: "12px", marginBottom: "3px" }}>Objektif:</div>
               <div 
                 style={{ 
                   whiteSpace: "pre-wrap", 
                   paddingLeft: "10px", 
-                  borderLeft: "4px solid #3b82f6", 
+                  borderLeft: "3.5px solid #3b82f6", 
                   color: "#1e293b", 
-                  fontSize: "11px", 
+                  fontSize: "12px", 
                   backgroundColor: "#f8fafc", 
-                  padding: "7px 10px", 
+                  padding: "6px 10px", 
                   borderRadius: "0 6px 6px 0", 
-                  lineHeight: "1.45", 
-                  minHeight: "45px" 
+                  lineHeight: "1.35", 
+                  minHeight: "38px" 
                 }}
               >
                 {formData.objectives || "Tiada objektif dinyatakan."}
@@ -639,8 +739,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* Images Grid (2 x 2) */}
-        <div style={{ margin: "10px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+        {/* 4 Images Grid - 6:5 Proportionally Elevated Boxes, Full-Fill Without Empty Margin, No Caption Ellipsis */}
+        <div style={{ margin: "5px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           {images.map((img, idx) => (
             <div 
               key={idx} 
@@ -657,7 +757,7 @@ export default function App() {
               <div 
                 style={{ 
                   width: "100%", 
-                  height: "120px", 
+                  height: "172px", 
                   backgroundColor: "#e2e8f0", 
                   borderRadius: "4px", 
                   overflow: "hidden", 
@@ -671,28 +771,35 @@ export default function App() {
                   <img 
                     src={img.dataUrl} 
                     alt={`Gambar ${idx + 1}`}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    style={{ 
+                      width: "100%",
+                      height: "100%",
+                      display: "block",
+                      objectFit: "cover"
+                    }}
                   />
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: "11px", gap: "3px" }}>
-                    <ImageIcon style={{ width: "22px", height: "22px", opacity: 0.4 }} />
-                    <span>Ruang Gambar {idx + 1}</span>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: "12px", gap: "4px" }}>
+                    <ImageIcon style={{ width: "26px", height: "26px", opacity: 0.4 }} />
+                    <span>Ruang Gambar {idx + 1} (6:5)</span>
                   </div>
                 )}
               </div>
+              {/* Caption with Font Size 12 & Full Unbroken Multiline Display (NO Ellipsis) */}
               <p 
                 style={{ 
-                  marginTop: "5px", 
-                  fontSize: "9.5px", 
+                  marginTop: "6px", 
+                  fontSize: "12px", 
                   fontWeight: "bold", 
-                  color: "#475569", 
+                  color: "#334155", 
                   textAlign: "center", 
                   textTransform: "uppercase", 
-                  letterSpacing: "0.03em",
-                  lineHeight: "1.25",
+                  letterSpacing: "0.02em",
+                  lineHeight: "1.3",
                   wordBreak: "break-word",
-                  maxHeight: "26px",
-                  overflow: "hidden"
+                  whiteSpace: "normal",
+                  overflow: "visible",
+                  width: "100%"
                 }}
               >
                 {img.description || `Gambar ${idx + 1}`}
@@ -701,57 +808,57 @@ export default function App() {
           ))}
         </div>
 
-        {/* 3 Signature Blocks with Complete Unclipped Full Names and Clean Wrapping */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "18px", borderTop: "1px solid #cbd5e1", paddingTop: "12px", marginTop: "2px" }}>
+        {/* 3 Signature Blocks with All Fonts Size 12 and Unclipped Clean Wrapping */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px", borderTop: "1px solid #cbd5e1", paddingTop: "8px", marginTop: "2px" }}>
           {/* Penyedia */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "130px" }}>
-            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "110px" }}>
+            <div style={{ fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.03em", color: "#64748b" }}>
               Disediakan oleh:
             </div>
-            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "5px", marginTop: "auto" }}>
-              <div style={{ fontSize: "10.5px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word" }}>
+            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", marginTop: "auto" }}>
+              <div style={{ fontSize: "12px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word", whiteSpace: "normal" }}>
                 {formData.userName || "—"}
               </div>
-              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", lineHeight: "1.25", marginTop: "2px", wordBreak: "break-word" }}>
+              <div style={{ fontSize: "12px", color: "#475569", fontWeight: 600, textTransform: "uppercase", lineHeight: "1.25", marginTop: "2px", wordBreak: "break-word", whiteSpace: "normal" }}>
                 {formData.position || "—"}
               </div>
-              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500, marginTop: "2px" }}>
+              <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, marginTop: "2px" }}>
                 SK KAMPUNG BAHAGIA JAYA, SIBU
               </div>
             </div>
           </div>
 
           {/* Penyemak */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "130px" }}>
-            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "110px" }}>
+            <div style={{ fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.03em", color: "#64748b" }}>
               Disemak oleh:
             </div>
-            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "5px", marginTop: "auto" }}>
-              <div style={{ fontSize: "10.5px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word" }}>
+            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", marginTop: "auto" }}>
+              <div style={{ fontSize: "12px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word", whiteSpace: "normal" }}>
                 {formData.userName1 || "—"}
               </div>
-              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", lineHeight: "1.25", marginTop: "2px", wordBreak: "break-word" }}>
+              <div style={{ fontSize: "12px", color: "#475569", fontWeight: 600, textTransform: "uppercase", lineHeight: "1.25", marginTop: "2px", wordBreak: "break-word", whiteSpace: "normal" }}>
                 {formData.position1 || "—"}
               </div>
-              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500, marginTop: "2px" }}>
+              <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, marginTop: "2px" }}>
                 SK KAMPUNG BAHAGIA JAYA, SIBU
               </div>
             </div>
           </div>
 
-          {/* Pengesah */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "130px" }}>
-            <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>
+          {/* Pengesah (Restricted to 4 Administrator Positions) */}
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "110px" }}>
+            <div style={{ fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.03em", color: "#64748b" }}>
               Disahkan oleh:
             </div>
-            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "5px", marginTop: "auto" }}>
-              <div style={{ fontSize: "10.5px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word" }}>
+            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", marginTop: "auto" }}>
+              <div style={{ fontSize: "12px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word", whiteSpace: "normal" }}>
                 {formData.userName2 || "—"}
               </div>
-              <div style={{ fontSize: "9px", color: "#475569", fontWeight: 600, textTransform: "uppercase", lineHeight: "1.25", marginTop: "2px", wordBreak: "break-word" }}>
+              <div style={{ fontSize: "12px", color: "#475569", fontWeight: 600, textTransform: "uppercase", lineHeight: "1.25", marginTop: "2px", wordBreak: "break-word", whiteSpace: "normal" }}>
                 {formData.position2 || "—"}
               </div>
-              <div style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 500, marginTop: "2px" }}>
+              <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, marginTop: "2px" }}>
                 SK KAMPUNG BAHAGIA JAYA, SIBU
               </div>
             </div>
@@ -810,7 +917,7 @@ export default function App() {
             <div className="bg-white border-t border-slate-200 p-4 flex flex-wrap justify-between items-center gap-3 z-20 shadow-inner">
               <div className="text-xs text-slate-500 flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Dokumen sedia untuk dimuat turun atau dicetak dalam saiz standard A4.</span>
+                <span>Dokumen sedia untuk dimuat turun atau dicetak dalam saiz standard A4 (Tepat 1 Halaman).</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -860,7 +967,7 @@ export default function App() {
             <img 
               src="https://lh3.googleusercontent.com/d/1f7DG6iymydW3DJPoDklB4bjBZB2hNDoc" 
               alt="Logo SK Kampung Bahagia Jaya" 
-              className="h-20 w-auto object-contain drop-shadow-md"
+              className="h-24 w-auto object-contain drop-shadow-md"
               referrerPolicy="no-referrer"
             />
           </div>
@@ -998,33 +1105,54 @@ export default function App() {
 
           <hr className="border-slate-200" />
 
-          {/* 4 Image Uploaders */}
+          {/* 4 Image Uploaders with Interactive Live Thumbnail Preview */}
           <div className="space-y-3">
-            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
-              <FileUp className="w-4 h-4 text-blue-600" />
-              Gambar Laporan Aktiviti (Maksimum 4 Keping)
-            </h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
+                <FileUp className="w-4 h-4 text-blue-600" />
+                Gambar Laporan Aktiviti (Maksimum 4 Keping)
+              </h3>
+              <span className="text-[11px] text-slate-400 font-medium">Nisbah 6:5 tinggi & padat tanpa ruang kosong</span>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {images.map((img, idx) => (
-                <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5 hover:border-slate-300 transition-colors">
+                <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 hover:border-slate-300 transition-colors">
                   <div className="flex justify-between items-center">
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Gambar {idx + 1}</label>
                     {img.dataUrl && (
-                      <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                        Dipilih
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        className="text-[11px] text-red-500 hover:text-red-700 flex items-center gap-1 font-semibold cursor-pointer"
+                        title="Padam Gambar"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Padam
+                      </button>
                     )}
                   </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
-                    onChange={(e) => handleImageChange(idx, e.target.files?.[0] || null)}
-                  />
+
+                  {img.dataUrl ? (
+                    <div className="relative w-full h-40 rounded-lg overflow-hidden border border-slate-300 shadow-inner bg-slate-100 flex items-center justify-center">
+                      <img 
+                        src={img.dataUrl} 
+                        alt={`Pratonton Gambar ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="w-full text-xs text-slate-500 file:mr-3 file:py-2.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer border border-dashed border-slate-300 rounded-lg p-3 bg-white"
+                      onChange={(e) => handleImageChange(idx, e.target.files?.[0] || null)}
+                    />
+                  )}
+
                   <input
                     type="text"
                     placeholder={`Kapsyen gambar ${idx + 1}...`}
-                    className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
                     value={img.description}
                     onChange={(e) => handleDescChange(idx, e.target.value)}
                   />
