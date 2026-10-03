@@ -150,8 +150,15 @@ app.post("/api/generate-pdf", async (req, res) => {
 
     const page = await browser.newPage();
     console.log("Setting page content...");
-    // Using networkidle0 to ensure images are fully loaded before PDF generation
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+    try {
+      await page.setContent(htmlContent, { waitUntil: "load", timeout: 20000 });
+    } catch (loadErr) {
+      console.warn("page.setContent with load timed out, falling back to domcontentloaded:", loadErr);
+      await page.setContent(htmlContent, { waitUntil: "domcontentloaded", timeout: 15000 });
+    }
+    
+    // Short wait to ensure fonts and layout finish rendering
+    await new Promise((resolve) => setTimeout(resolve, 500));
     
     console.log("Generating PDF...");
     const pdfBuffer = await page.pdf({
@@ -162,16 +169,22 @@ app.post("/api/generate-pdf", async (req, res) => {
     });
 
     console.log("PDF generated successfully. Size:", pdfBuffer.length);
-    await browser.close();
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${formData.programName || "Report"}.pdf"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(formData.programName || "Report")}.pdf"`);
     res.send(Buffer.from(pdfBuffer));
     console.log("PDF sent to client.");
   } catch (error: any) {
-    console.error("PDF Generation Error:", error);
-    if (browser) await browser.close();
-    res.status(500).json({ error: "Failed to generate PDF", details: error.message });
+    console.error("PDF Generation Error:", error?.message || error);
+    res.status(500).json({ error: "Failed to generate PDF", details: error?.message || String(error) });
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (closeErr) {
+        console.warn("Error closing browser instance:", closeErr);
+      }
+    }
   }
 });
 
