@@ -627,6 +627,7 @@ export default function App() {
   ];
 
   // Reusable Single-Page A4 OPR Report Document Layout - All Fonts Size 12, Taller Natural Header Logo, 6:5 Proportional Images, No Caption Ellipsis
+  // Reusable Single-Page A4 OPR Report Document Layout - All Fonts Size 12, Header Top Breathing Room, 6:5 Images, 2-Enter Signature Gap, and Wide Signing Space
   const renderDocumentContent = (containerId: string, refInstance?: React.RefObject<HTMLDivElement | null>) => (
     <div 
       id={containerId}
@@ -638,14 +639,14 @@ export default function App() {
         maxHeight: "1123px", 
         backgroundColor: "#ffffff",
         color: "#0f172a",
-        padding: "20px 30px",
+        padding: "36px 32px 36px 32px",
         boxSizing: "border-box",
         border: "1px solid #e2e8f0",
         position: "relative",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
+        justifyContent: "flex-start",
         fontFamily: "Inter, Arial, Helvetica, sans-serif"
       }}
     >
@@ -664,10 +665,10 @@ export default function App() {
         <div style={{ width: "120%", height: "120%", transform: "rotate(12deg)", border: "40px solid #2563eb" }}></div>
       </div>
 
-      <div style={{ position: "relative", zIndex: 10, flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-        {/* Header / Banner - Taller & Natural Proportions (Not Squished/Leper) */}
-        <div>
-          <div style={{ textAlign: "center", marginBottom: "10px", paddingBottom: "6px", borderBottom: "2px solid #2563eb" }}>
+      <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", width: "100%" }}>
+        {/* Header / Banner - With 2-Enter Space Above and Natural Proportions */}
+        <div style={{ marginBottom: "8px" }}>
+          <div style={{ textAlign: "center", paddingBottom: "6px", borderBottom: "2px solid #2563eb" }}>
             {bannerDataUrl ? (
               <img 
                 src={bannerDataUrl} 
@@ -676,7 +677,7 @@ export default function App() {
                   width: "auto", 
                   maxWidth: "100%", 
                   height: "auto", 
-                  maxHeight: "95px", 
+                  maxHeight: "90px", 
                   objectFit: "contain", 
                   margin: "0 auto", 
                   display: "block" 
@@ -696,7 +697,7 @@ export default function App() {
           </div>
 
           {/* Details Table / Grid - All Fonts Exact Size 12 */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "12px", lineHeight: "1.3" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", lineHeight: "1.3", marginTop: "6px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "95px 1fr", gap: "8px", alignItems: "baseline" }}>
               <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "12px" }}>Program:</span>
               <span style={{ fontWeight: 600, color: "#0f172a", fontSize: "12px" }}>{formData.programName || "—"}</span>
@@ -717,7 +718,7 @@ export default function App() {
               <span style={{ fontWeight: "bold", color: "#475569", textTransform: "uppercase", fontSize: "12px" }}>Sasaran:</span>
               <span style={{ fontWeight: 500, color: "#1e293b", fontSize: "12px" }}>{formData.targetAudience || "—"}</span>
             </div>
-            <div style={{ paddingTop: "5px", borderTop: "1px solid #e2e8f0" }}>
+            <div style={{ paddingTop: "4px", borderTop: "1px solid #e2e8f0" }}>
               <div style={{ fontWeight: "bold", color: "#334155", textTransform: "uppercase", fontSize: "12px", marginBottom: "3px" }}>Objektif:</div>
               <div 
                 style={{ 
@@ -730,7 +731,7 @@ export default function App() {
                   padding: "6px 10px", 
                   borderRadius: "0 6px 6px 0", 
                   lineHeight: "1.35", 
-                  minHeight: "38px" 
+                  minHeight: "36px" 
                 }}
               >
                 {formData.objectives || "Tiada objektif dinyatakan."}
@@ -740,7 +741,7 @@ export default function App() {
         </div>
 
         {/* 4 Images Grid - 6:5 Proportionally Elevated Boxes, Full-Fill Without Empty Margin, No Caption Ellipsis */}
-        <div style={{ margin: "5px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+        <div style={{ margin: "2px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           {images.map((img, idx) => (
             <div 
               key={idx} 
@@ -757,7 +758,7 @@ export default function App() {
               <div 
                 style={{ 
                   width: "100%", 
-                  height: "172px", 
+                  height: "152px", 
                   backgroundColor: "#e2e8f0", 
                   borderRadius: "4px", 
                   overflow: "hidden", 
@@ -788,7 +789,7 @@ export default function App() {
               {/* Caption with Font Size 12 & Full Unbroken Multiline Display (NO Ellipsis) */}
               <p 
                 style={{ 
-                  marginTop: "6px", 
+                  marginTop: "5px", 
                   fontSize: "12px", 
                   fontWeight: "bold", 
                   color: "#334155", 
@@ -808,14 +809,16 @@ export default function App() {
           ))}
         </div>
 
-        {/* 3 Signature Blocks with All Fonts Size 12 and Unclipped Clean Wrapping */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px", borderTop: "1px solid #cbd5e1", paddingTop: "8px", marginTop: "2px" }}>
+        {/* 3 Signature Blocks - Jarak 2 Kali Enter Dari Gambar & Ruang Luas untuk Tandatangan */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px", borderTop: "1.5px solid #cbd5e1", paddingTop: "10px", marginTop: "22px" }}>
           {/* Penyedia */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "110px" }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "120px" }}>
             <div style={{ fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.03em", color: "#64748b" }}>
               Disediakan oleh:
             </div>
-            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", marginTop: "auto" }}>
+            {/* Luas Ruang Tandatangan / Physical Signature Space */}
+            <div style={{ height: "48px" }}></div>
+            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px" }}>
               <div style={{ fontSize: "12px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word", whiteSpace: "normal" }}>
                 {formData.userName || "—"}
               </div>
@@ -829,11 +832,13 @@ export default function App() {
           </div>
 
           {/* Penyemak */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "110px" }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "120px" }}>
             <div style={{ fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.03em", color: "#64748b" }}>
               Disemak oleh:
             </div>
-            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", marginTop: "auto" }}>
+            {/* Luas Ruang Tandatangan / Physical Signature Space */}
+            <div style={{ height: "48px" }}></div>
+            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px" }}>
               <div style={{ fontSize: "12px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word", whiteSpace: "normal" }}>
                 {formData.userName1 || "—"}
               </div>
@@ -847,11 +852,13 @@ export default function App() {
           </div>
 
           {/* Pengesah (Restricted to 4 Administrator Positions) */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "110px" }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "120px" }}>
             <div style={{ fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.03em", color: "#64748b" }}>
               Disahkan oleh:
             </div>
-            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", marginTop: "auto" }}>
+            {/* Luas Ruang Tandatangan / Physical Signature Space */}
+            <div style={{ height: "48px" }}></div>
+            <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px" }}>
               <div style={{ fontSize: "12px", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", lineHeight: "1.3", wordBreak: "break-word", whiteSpace: "normal" }}>
                 {formData.userName2 || "—"}
               </div>
